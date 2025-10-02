@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pohon Keluarga 3D</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3), transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(138, 43, 226, 0.3), transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(72, 61, 139, 0.3), transparent 50%);
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+            animation: fadeInDown 1s ease;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 50px;
+            font-size: 1.2em;
+        }
+
+        .controls {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 12px 30px;
+            margin: 0 10px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 1em;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.3);
+        }
+
+        .tree-container {
+            perspective: 2000px;
+            transform-style: preserve-3d;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 50px 0;
+            position: relative;
+        }
+
+        .generation-wrapper {
+            position: relative;
+            width: 100%;
+            margin: 40px 0;
+        }
+
+        .generation {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 60px;
+            flex-wrap: wrap;
+            position: relative;
+            padding: 20px;
+        }
+
+        .vertical-line {
+            position: absolute;
+            width: 3px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.5), rgba(255,255,255,0.2));
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 10px rgba(255,255,255,0.3);
+            z-index: 0;
+        }
+
+        .horizontal-lines {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            right: 0;
+            height: 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .h-line {
+            position: absolute;
+            height: 3px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.2), rgba(255,255,255,0.5), rgba(255,255,255,0.2));
+            top: 0;
+            box-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+
+        .v-connector {
+            position: absolute;
+            width: 3px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.5), rgba(255,255,255,0.2));
+            box-shadow: 0 0 10px rgba(255,255,255,0.3);
+        }
+
+        .member-card {
+            width: 200px;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            animation: fadeInUp 0.8s ease backwards;
+            cursor: pointer;
+            z-index: 1;
+        }
+
+        .member-card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+            border-radius: 20px;
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .member-card:hover {
+            transform: translateY(-15px) rotateY(5deg) scale(1.05);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+        }
+
+        .member-card:hover::before {
+            opacity: 1;
+        }
+
+        .photo-container {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 15px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid rgba(255,255,255,0.5);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            position: relative;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .photo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .member-card:hover .photo-container img {
+            transform: scale(1.1);
+        }
+
+        .photo-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            color: white;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .member-info {
+            text-align: center;
+        }
+
+        .member-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 8px;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .member-dates {
+            font-size: 0.85em;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 4px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.75em;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .status-alive {
+            background: rgba(76, 175, 80, 0.3);
+            color: #a5d6a7;
+            border: 1px solid rgba(76, 175, 80, 0.5);
+        }
+
+        .status-deceased {
+            background: rgba(158, 158, 158, 0.3);
+            color: #e0e0e0;
+            border: 1px solid rgba(158, 158, 158, 0.5);
+        }
+
+        .connection-line {
+            position: absolute;
+            background: linear-gradient(90deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1));
+            height: 2px;
+            transform-origin: left center;
+            pointer-events: none;
+            box-shadow: 0 0 10px rgba(255,255,255,0.2);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: rgba(255,255,255,0.95);
+            padding: 40px;
+            border-radius: 25px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            animation: modalSlideIn 0.4s ease forwards;
+        }
+
+        .modal-content h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 2em;
+            color: #999;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: #333;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes modalSlideIn {
+            to {
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        .generation-label {
+            text-align: center;
+            color: white;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 30px 0 20px;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            .subtitle {
+                font-size: 1em;
+            }
+
+            .btn {
+                padding: 10px 20px;
+                margin: 5px;
+                font-size: 0.9em;
+            }
+
+            .generation {
+                gap: 30px;
+            }
+
+            .member-card {
+                width: 160px;
+                padding: 15px;
+            }
+
+            .photo-container {
+                width: 100px;
+                height: 100px;
+            }
+
+            .member-name {
+                font-size: 1em;
+            }
+
+            .member-dates {
+                font-size: 0.75em;
+            }
+
+            .generation-label {
+                font-size: 1.2em;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 30px 20px;
+            }
+
+            .controls {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 300px;
+                margin: 0 auto;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px 10px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .member-card {
+                width: 140px;
+                padding: 12px;
+            }
+
+            .photo-container {
+                width: 80px;
+                height: 80px;
+            }
+
+            .generation {
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌳 Pohon Keluarga</h1>
+        <p class="subtitle">Jejak Sejarah Keluarga Kami</p>
+
+
+        <div id="tree" class="tree-container"></div>
+    </div>
+
+    <script>
+        let familyMembers = [
+            {
+                name: "H. Mahmud (28 mulud)",
+                photo: "",
+                birthDate: "",
+                deathDate: "",
+                generation: 1
+            },
+            {
+                name: "Hj. Siti Aminah",
+                photo: "",
+                birthDate: "-",
+                deathDate: "-",
+                generation: 1
+            },
+            {
+                name: "Undang",
+                photo: "",
+                birthDate: "1965-05-01",
+                deathDate: "",
+                generation: 2
+            },
+            {
+                name: "Imas Siti Kartini (11 Syawal)",
+                photo: "",
+                birthDate: "1973-04-13",
+                deathDate: "2025-04-10",
+                generation: 2
+            },
+            {
+                name: "Asep Taupik Sopyan",
+                photo: "",
+                birthDate: "1991-01-16",
+                deathDate: "",
+                generation: 3
+            },
+            {
+                name: "Ade Ahmad Iskandar",
+                photo: "",
+                birthDate: "1992-11-10",
+                deathDate: "",
+                generation: 3
+            },
+                        {
+                name: "Andi Ahmad Zaelani",
+                photo: "",
+                birthDate: "2002-09-08",
+                deathDate: "",
+                generation: 3
+            }
+        ];
+
+        function renderTree() {
+            const tree = document.getElementById('tree');
+            tree.innerHTML = '';
+
+            const generations = {};
+            familyMembers.forEach(member => {
+                if (!generations[member.generation]) {
+                    generations[member.generation] = [];
+                }
+                generations[member.generation].push(member);
+            });
+
+            const sortedGens = Object.keys(generations).sort((a, b) => a - b);
+
+            sortedGens.forEach((gen, genIndex) => {
+                const genWrapper = document.createElement('div');
+                genWrapper.className = 'generation-wrapper';
+
+                const genLabel = document.createElement('div');
+                genLabel.className = 'generation-label';
+                genLabel.textContent = `Generasi ${gen}`;
+                genWrapper.appendChild(genLabel);
+
+                // Tambah garis horizontal untuk koneksi antar saudara (kecuali generasi pertama)
+                if (generations[gen].length > 1) {
+                    const horizontalLines = document.createElement('div');
+                    horizontalLines.className = 'horizontal-lines';
+                    
+                    const hLine = document.createElement('div');
+                    hLine.className = 'h-line';
+                    hLine.style.left = '25%';
+                    hLine.style.right = '25%';
+                    horizontalLines.appendChild(hLine);
+                    
+                    genWrapper.appendChild(horizontalLines);
+                }
+
+                const genDiv = document.createElement('div');
+                genDiv.className = 'generation';
+
+                generations[gen].forEach((member, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'member-card';
+                    card.style.animationDelay = `${index * 0.1}s`;
+
+                    const photoContainer = document.createElement('div');
+                    photoContainer.className = 'photo-container';
+
+                    if (member.photo) {
+                        const img = document.createElement('img');
+                        img.src = member.photo;
+                        img.alt = member.name;
+                        photoContainer.appendChild(img);
+                    } else {
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'photo-placeholder';
+                        placeholder.textContent = member.name.charAt(0).toUpperCase();
+                        photoContainer.appendChild(placeholder);
+                    }
+
+                    const info = document.createElement('div');
+                    info.className = 'member-info';
+
+                    const name = document.createElement('div');
+                    name.className = 'member-name';
+                    name.textContent = member.name;
+
+                    const birthDateStr = new Date(member.birthDate).toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+
+                    const dates = document.createElement('div');
+                    dates.className = 'member-dates';
+                    if (member.deathDate) {
+                        const deathDateStr = new Date(member.deathDate).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                        });
+                        dates.textContent = `${birthDateStr} - ${deathDateStr}`;
+                    } else {
+                        dates.textContent = `Lahir: ${birthDateStr}`;
+                    }
+
+                    const status = document.createElement('div');
+                    status.className = `status-badge ${member.deathDate ? 'status-deceased' : 'status-alive'}`;
+                    status.textContent = member.deathDate ? 'Almarhum/ah' : 'Masih Hidup';
+
+                    info.appendChild(name);
+                    info.appendChild(dates);
+                    info.appendChild(status);
+
+                    card.appendChild(photoContainer);
+                    card.appendChild(info);
+                    genDiv.appendChild(card);
+                });
+
+                genWrapper.appendChild(genDiv);
+
+                // Tambah garis vertikal ke generasi berikutnya
+                if (genIndex < sortedGens.length - 1) {
+                    const vLine = document.createElement('div');
+                    vLine.className = 'vertical-line';
+                    vLine.style.height = '80px';
+                    vLine.style.top = '100%';
+                    genWrapper.appendChild(vLine);
+                }
+
+                tree.appendChild(genWrapper);
+            });
+        }
+
+        function openModal() {
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+            document.getElementById('memberForm').reset();
+        }
+
+        function addMember(e) {
+            e.preventDefault();
+
+            const member = {
+                name: document.getElementById('name').value,
+                photo: document.getElementById('photo').value,
+                birthDate: document.getElementById('birthDate').value,
+                deathDate: document.getElementById('deathDate').value,
+                generation: parseInt(document.getElementById('generation').value)
+            };
+
+            familyMembers.push(member);
+            renderTree();
+            closeModal();
+        }
+
+        function resetTree() {
+            if (confirm('Apakah Anda yakin ingin mereset pohon keluarga ke data awal?')) {
+                familyMembers = [
+                    {
+                        name: "Budi Santoso",
+                        photo: "",
+                        birthDate: "1950-05-15",
+                        deathDate: "2020-03-10",
+                        generation: 1
+                    },
+                    {
+                        name: "Siti Aminah",
+                        photo: "",
+                        birthDate: "1952-08-20",
+                        deathDate: "",
+                        generation: 1
+                    },
+                    {
+                        name: "Ahmad Santoso",
+                        photo: "",
+                        birthDate: "1975-03-12",
+                        deathDate: "",
+                        generation: 2
+                    },
+                    {
+                        name: "Rina Wati",
+                        photo: "",
+                        birthDate: "1978-11-25",
+                        deathDate: "",
+                        generation: 2
+                    },
+                    {
+                        name: "Dika Santoso",
+                        photo: "",
+                        birthDate: "2000-07-08",
+                        deathDate: "",
+                        generation: 3
+                    },
+                    {
+                        name: "Maya Santoso",
+                        photo: "",
+                        birthDate: "2003-12-15",
+                        deathDate: "",
+                        generation: 3
+                    }
+                ];
+                renderTree();
+            }
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        renderTree();
+    </script>
+</body>
+</html>
